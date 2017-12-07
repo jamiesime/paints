@@ -25,6 +25,7 @@ var app = function(){
 
 //global variables
   var brushSize = 3;
+  var brushType = 'default';
 
 //mouseEvents
           var mouseDown;
@@ -52,6 +53,11 @@ var app = function(){
             context.arc(x, y, 50, 0, 2*Math.PI);
             context.stroke();
             context.closePath();
+          }
+
+          var drawLine = function(x, y){
+            context.beginPath();
+            beginPath();
           }
 
           var simpleBrush = function(x, y, size){
@@ -83,6 +89,21 @@ var app = function(){
     brushSize = size;
   }
 
+  var changeBrushType = function(type){
+    switch (type){
+      case 'default':
+        brushType = 'default';
+        break;
+      case 'line':
+        brushType = 'line';
+        break;
+    }
+  }
+
+  var clearAll = function(){
+    context.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
 
 
 
@@ -103,6 +124,12 @@ var app = function(){
   largeBrush.addEventListener('click', function(){
     changeBrushSize(10);
   })
+  var lineTool = document.getElementById('line-tool');
+  lineTool.addEventListener('click', function(){
+    changeBrushType('line');
+  })
+  var clearButton = document.getElementById('clear-all');
+  clearButton.addEventListener('click', clearAll);
 
 };
 
