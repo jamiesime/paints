@@ -1,53 +1,76 @@
+//global variables
+  var brushSize = 3;
+  var brushType = 'default';
+  var lineStartX;
+  var lineStartY;
+  var lineStarted;
+
 var app = function(){
   var canvas = document.getElementById('main-canvas');
   var context = canvas.getContext('2d');
   console.log(context);
-  //
-  // context.fillStyle = "#FFA500";
-  // context.fillRect(10, 10, 100, 100);
-  //
-  // context.beginPath();
-  // context.moveTo(100, 100);
-  // context.lineTo(100, 200);
-  // context.stroke();
-  //
-  // context.beginPath();
-  // context.moveTo(200,200);
-  // context.lineTo(200, 300);
-  // context.lineTo(100,300);
-  // context.closePath();
-  // context.stroke();
-  //
-  // context.beginPath();
-  // context.arc(200, 200, 75, 0, 2*Math.PI);
-  // context.fill();
-  // context.closePath();
 
-//global variables
-  var brushSize = 3;
-  var brushType = 'default';
+
+//need to run first, they populate initial setup
+
+      var sizedropper = document.getElementById('size-dropper');
+      for (i = 0 ; i < 40 ; i++){
+        var option = document.createElement('option');
+        option.value = i;
+        option.innerText = i;
+        sizedropper.appendChild(option);
+      }
+      sizedropper.addEventListener('change', function(){
+        brushSize = sizedropper.value;
+      })
+
+      var currentBrushDisplay = function(){
+        var current = document.getElementById('current-brush');
+        current.innerText = "Current: " + brushType;
+      }
+
+      sizedropper.value = 3;
+      currentBrushDisplay();
 
 //mouseEvents
           var mouseDown;
 
           canvas.addEventListener('mousedown', function(event){
-            console.log('location: ', event.layerX, event.layerY);
-            simpleBrush(event.layerX, event.layerY);
             mouseDown = true;
+            switch (brushType){
+              case 'default':
+                simpleBrushStart(event.layerX, event.layerY);
+              break;
+              case 'line':
+                if (!lineStarted)
+                {
+                  startLine(event.layerX, event.layerY);
+                }
+                else {
+                  endLine(event.layerX, event.layerY);
+                }
+              break;
+            }
           })
 
           canvas.addEventListener('mouseup', function(event){
             mouseDown = false;
+            simpleBrushEnd();
           })
 
           canvas.addEventListener('mousemove', function(event){
-            if (mouseDown){
-              simpleBrush(event.layerX, event.layerY, brushSize);
+            if (mouseDown && brushType === 'default'){
+              simpleBrushDraw(event.layerX, event.layerY, brushSize);
             }
+          })
+
+          canvas.addEventListener('dblclick', function(event){
+            lineStarted = false;
           })
 
 
 //draw Functions
+
           var drawCircle = function(x, y){
             context.beginPath();
             context.arc(x, y, 50, 0, 2*Math.PI);
@@ -55,29 +78,43 @@ var app = function(){
             context.closePath();
           }
 
-          var drawLine = function(x, y){
-            context.beginPath();
-            beginPath();
+          var startLine = function(x, y){
+            lineStartX = x;
+            lineStartY = y;
+            lineStarted = true;
           }
 
-          var simpleBrush = function(x, y, size){
+          var endLine = function(x, y){
             context.lineJoin = "round";
-            context.lineWidth = size;
+            context.lineWidth = brushSize;
             context.beginPath();
-            context.moveTo(x-1, y-1);
+            context.moveTo(lineStartX, lineStartY);
             context.lineTo(x, y);
             context.closePath();
             context.stroke();
+            lineStartX = x;
+            lineStartY = y;
           }
 
-        var img = document.createElement('img');
-        img.src = "http://emojis.slackmojis.com/emojis/images/1457563042/312/doge.png";
+          var simpleBrushStart = function(x, y, size){
+            context.lineJoin = "round";
+            context.lineWidth = size;
+            context.beginPath();
+            context.moveTo(x, y);
+            context.lineTo(x-1, y-1);
+            context.stroke();
+          }
 
-        var drawDog = function(){
-          context.drawImage(img, 200, 400, 90, 90);
-        }
-        img.addEventListener('load', drawDog);
+          var simpleBrushDraw = function(x, y, size){
+            context.lineJoin = "round";
+            context.lineWidth = size;
+            context.lineTo(x-1, y-1);
+            context.stroke();
+          }
 
+          var simpleBrushEnd = function(){
+            context.closePath();
+          }
 
 //toolbar Functions
 
@@ -87,9 +124,12 @@ var app = function(){
 
   var changeBrushSize = function(size){
     brushSize = size;
+    changeBrushType('default');
+    currentBrushDisplay();
   }
 
   var changeBrushType = function(type){
+    lineStarted = false;
     switch (type){
       case 'default':
         brushType = 'default';
@@ -98,6 +138,7 @@ var app = function(){
         brushType = 'line';
         break;
     }
+    currentBrushDisplay();
   }
 
   var clearAll = function(){
@@ -105,33 +146,46 @@ var app = function(){
   }
 
 
-
-
-
 //DOM manipulation
   var colourPicker = document.getElementById('color-picker');
   colourPicker.addEventListener('change', changeColour);
 
-  var smallBrush = document.getElementById('small-brush');
-  smallBrush.addEventListener('click', function(){
-    changeBrushSize(3);
-  })
-  var mediumBrush = document.getElementById('medium-brush');
-  mediumBrush.addEventListener('click', function(){
-    changeBrushSize(6);
-  })
-  var largeBrush = document.getElementById('large-brush');
-  largeBrush.addEventListener('click', function(){
-    changeBrushSize(10);
-  })
   var lineTool = document.getElementById('line-tool');
   lineTool.addEventListener('click', function(){
     changeBrushType('line');
   })
+  var penTool = document.getElementById('pen-tool');
+  penTool.addEventListener('click', function(){
+    changeBrushType('default');
+  })
   var clearButton = document.getElementById('clear-all');
   clearButton.addEventListener('click', clearAll);
 
+
 };
+
+
+var paintBrush = function(){
+  var context = canvas.getContext('2d');
+  var isDrawing;
+  context.lineWidth = brushSize;
+  context.closePath();
+  context.beginPath();
+
+  canvas.onmousedown = function(e) {
+    isDrawing = true;
+    context.moveTo(e.clientX, e.clientY);
+  };
+  canvas.onmousemove = function(e) {
+    if (isDrawing) {
+      context.lineTo(e.clientX, e.clientY);
+      context.stroke();
+    }
+  };
+  canvas.onmouseup = function() {
+    isDrawing = false;
+  };
+}
 
 
 
